@@ -1,0 +1,93 @@
+;
+; VirtualKeyboard.inf
+;
+
+[Version]
+Signature="$WINDOWS NT$"
+Class=Sample ; TODO: edit Class
+ClassGuid={78A1C341-4539-11d3-B88D-00C04FAD5171} ; TODO: edit ClassGuid
+Provider=%ManufacturerName%
+CatalogFile=VirtualKeyboard.cat
+DriverVer= ; TODO: set DriverVer in stampinf property pages
+
+[DestinationDirs]
+DefaultDestDir = 12
+VirtualKeyboard_Device_CoInstaller_CopyFiles = 11
+
+; ================= Class section =====================
+
+[ClassInstall32]
+Addreg=SampleClassReg
+
+[SampleClassReg]
+HKR,,,0,%ClassName%
+HKR,,Icon,,-5
+
+[SourceDisksNames]
+1 = %DiskName%,,,""
+
+[SourceDisksFiles]
+VirtualKeyboard.sys  = 1,,
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll=1 ; make sure the number matches with SourceDisksNames
+
+;*****************************************
+; Install Section
+;*****************************************
+
+[Manufacturer]
+%ManufacturerName%=Standard,NT$ARCH$
+
+[Standard.NT$ARCH$]
+%VirtualKeyboard.DeviceDesc%=VirtualKeyboard_Device, Root\VirtualKeyboard ; TODO: edit hw-id
+
+[VirtualKeyboard_Device.NT]
+CopyFiles=Drivers_Dir
+
+[Drivers_Dir]
+VirtualKeyboard.sys
+
+;-------------- Service installation
+[VirtualKeyboard_Device.NT.Services]
+AddService = VirtualKeyboard,%SPSVCINST_ASSOCSERVICE%, VirtualKeyboard_Service_Inst
+
+; -------------- VirtualKeyboard driver install sections
+[VirtualKeyboard_Service_Inst]
+DisplayName    = %VirtualKeyboard.SVCDESC%
+ServiceType    = 1               ; SERVICE_KERNEL_DRIVER
+StartType      = 3               ; SERVICE_DEMAND_START
+ErrorControl   = 1               ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %12%\VirtualKeyboard.sys
+
+;
+;--- VirtualKeyboard_Device Coinstaller installation ------
+;
+
+[VirtualKeyboard_Device.NT.CoInstallers]
+AddReg=VirtualKeyboard_Device_CoInstaller_AddReg
+CopyFiles=VirtualKeyboard_Device_CoInstaller_CopyFiles
+
+[VirtualKeyboard_Device_CoInstaller_AddReg]
+HKR,,CoInstallers32,0x00010000, "WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll,WdfCoInstaller"
+
+[VirtualKeyboard_Device_CoInstaller_CopyFiles]
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll
+
+[VirtualKeyboard_Device.NT.Wdf]
+KmdfService =  VirtualKeyboard, VirtualKeyboard_wdfsect
+[VirtualKeyboard_wdfsect]
+KmdfLibraryVersion = $KMDFVERSION$
+
+[Strings]
+SPSVCINST_ASSOCSERVICE= 0x00000002
+ManufacturerName="azyobuzin"
+ClassName="Samples" ; TODO: edit ClassName
+DiskName = "VirtualKeyboard Installation Disk"
+VirtualKeyboard.DeviceDesc = "VirtualKeyboard Device"
+VirtualKeyboard.SVCDESC = "VirtualKeyboard Service"
+
+; HID source driver
+[VirtualKeyboard_Device.NT.HW]
+AddReg = VirtualKeyboard_Device.NT.AddReg
+
+[VirtualKeyboard_Device.NT.AddReg]
+HKR,,"LowerFilters",0x00010000,"vhf"
