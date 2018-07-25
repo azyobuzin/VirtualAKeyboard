@@ -1,5 +1,5 @@
-#pragma once
+﻿#pragma once
 
 extern "C" {
-	NTSTATUS VirtualKeyboardCreateDevice(_Inout_ PWDFDEVICE_INIT DeviceInit);
+    NTSTATUS VirtualKeyboardCreateDevice(_Inout_ PWDFDEVICE_INIT DeviceInit);
 }

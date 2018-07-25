@@ -1,12 +1,12 @@
-#include <ntddk.h>
+Ôªø#include <ntddk.h>
 #include <wdf.h>
 #include "trace.h"
 #include "device.h"
 
 extern "C" {
-	// DriverEntry ÇÕÉ}ÉìÉOÉäÉìÉOÇ≈Ç´Ç»Ç¢; alloc_text ÇÕ extern "C" Ç…ÇµÇ©ëŒâûÇµÇƒÇ¢Ç»Ç¢
-	DRIVER_INITIALIZE DriverEntry;
-	EVT_WDF_DRIVER_DEVICE_ADD VirtualKeyboardDriverEvtDeviceAdd;
+    // DriverEntry „ÅØ„Éû„É≥„Ç∞„É™„É≥„Ç∞„Åß„Åç„Å™„ÅÑ; alloc_text „ÅØ extern "C" „Å´„Åó„ÅãÂØæÂøú„Åó„Å¶„ÅÑ„Å™„ÅÑ
+    DRIVER_INITIALIZE DriverEntry;
+    EVT_WDF_DRIVER_DEVICE_ADD VirtualKeyboardDriverEvtDeviceAdd;
 }
 
 #ifdef ALLOC_PRAGMA
@@ -15,23 +15,23 @@ extern "C" {
 #endif
 
 NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObject, _In_ PUNICODE_STRING RegistryPath) {
-	TraceEnterFunc();
+    TraceEnterFunc();
 
-	WDF_DRIVER_CONFIG config;
-	WDF_DRIVER_CONFIG_INIT(&config, VirtualKeyboardDriverEvtDeviceAdd);
+    WDF_DRIVER_CONFIG config;
+    WDF_DRIVER_CONFIG_INIT(&config, VirtualKeyboardDriverEvtDeviceAdd);
 
-	// WDF ÇÃãVéÆ
-	NTSTATUS status = WdfDriverCreate(DriverObject, RegistryPath, WDF_NO_OBJECT_ATTRIBUTES, &config, WDF_NO_HANDLE);
+    // WDF „ÅÆÂÑÄÂºè
+    NTSTATUS status = WdfDriverCreate(DriverObject, RegistryPath, WDF_NO_OBJECT_ATTRIBUTES, &config, WDF_NO_HANDLE);
 
-	if (!NT_SUCCESS(status))
-		TraceErrorStatus("WdfDriverCreate", status);
+    if (!NT_SUCCESS(status))
+        TraceErrorStatus("WdfDriverCreate", status);
 
-	return status;
+    return status;
 }
 
 NTSTATUS VirtualKeyboardDriverEvtDeviceAdd(_In_ WDFDRIVER Driver, _Inout_ PWDFDEVICE_INIT DeviceInit) {
-	UNREFERENCED_PARAMETER(Driver);
-	PAGED_CODE();
+    UNREFERENCED_PARAMETER(Driver);
+    PAGED_CODE();
 
-	return VirtualKeyboardCreateDevice(DeviceInit);
+    return VirtualKeyboardCreateDevice(DeviceInit);
 }

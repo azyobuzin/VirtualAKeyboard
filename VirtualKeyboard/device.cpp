@@ -1,28 +1,28 @@
-#include <ntddk.h>
+ï»¿#include <ntddk.h>
 #include <wdf.h>
 #include <vhf.h>
 #include "trace.h"
 #include "device.h"
 
-// ‰‰ñ‘Ò‚¿ŽžŠÔ
+// åˆå›žå¾…ã¡æ™‚é–“
 #define KEY_DOWN_TIMER_DUE_TIME_MS 10000
 
-// ’èŠú“ü—ÍŠÔŠu
+// å®šæœŸå…¥åŠ›é–“éš”
 #define KEY_DOWN_TIMER_INTERVAL_MS 1000
 
-// ƒL[‚ð—£‚·‚Ü‚Å‚ÌŽžŠÔ
+// ã‚­ãƒ¼ã‚’é›¢ã™ã¾ã§ã®æ™‚é–“
 #define KEY_UP_TIMER_DUE_TIME_MS 200
 
-// I—¹‚·‚é‚Ü‚Å‚Ì‰ñ”
+// çµ‚äº†ã™ã‚‹ã¾ã§ã®å›žæ•°
 #define LOOP_COUNT 10
 
 extern "C" {
-	EVT_WDF_OBJECT_CONTEXT_CLEANUP VirtualKeyboardDeviceEvtCleanupCallback;
-	EVT_VHF_CLEANUP VirtualKeyboardEvtVhfCleanup;
-	NTSTATUS VirtualKeyboardDeviceCreateKeyDownTimer(WDFDEVICE);
-	EVT_WDF_TIMER VirtualKeyboardDeviceKeyDownTimerEvtTimerFunc;
-	NTSTATUS VirtualKeyboardDeviceCreateKeyUpTimer(WDFDEVICE);
-	EVT_WDF_TIMER VirtualKeyboardDeviceKeyUpTimerEvtTimerFunc;
+    EVT_WDF_OBJECT_CONTEXT_CLEANUP VirtualKeyboardDeviceEvtCleanupCallback;
+    EVT_VHF_CLEANUP VirtualKeyboardEvtVhfCleanup;
+    NTSTATUS VirtualKeyboardDeviceCreateKeyDownTimer(WDFDEVICE);
+    EVT_WDF_TIMER VirtualKeyboardDeviceKeyDownTimerEvtTimerFunc;
+    NTSTATUS VirtualKeyboardDeviceCreateKeyUpTimer(WDFDEVICE);
+    EVT_WDF_TIMER VirtualKeyboardDeviceKeyUpTimerEvtTimerFunc;
 }
 
 #ifdef ALLOC_PRAGMA
@@ -34,208 +34,208 @@ extern "C" {
 #endif
 
 typedef struct _VIRTUAL_KEYBOARD_DEVICE_CONTEXT {
-	VHFHANDLE VhfHandle;
-	WDFTIMER KeyDownTimer;
-	WDFTIMER KeyUpTimer;
-	BYTE Counter;
+    VHFHANDLE VhfHandle;
+    WDFTIMER KeyDownTimer;
+    WDFTIMER KeyUpTimer;
+    BYTE Counter;
 } VIRTUAL_KEYBOARD_DEVICE_CONTEXT, *PVIRTUAL_KEYBOARD_DEVICE_CONTEXT;
 
 WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(VIRTUAL_KEYBOARD_DEVICE_CONTEXT, VirtualKeyboardGetDeviceContext);
 
 static UCHAR ReportDescriptor[27] = {
-	0x05, 0x01,                    // USAGE_PAGE (Generic Desktop)
-	0x09, 0x06,                    // USAGE (Keyboard)
-	0xa1, 0x01,                    // COLLECTION (Application)
-	0x05, 0x07,                    //   USAGE_PAGE (Keyboard)
-	0x09, 0x04,                    //   USAGE (Keyboard a and A)
-	0x15, 0x00,                    //   LOGICAL_MINIMUM (0)
-	0x25, 0x01,                    //   LOGICAL_MAXIMUM (1)
-	0x75, 0x01,                    //   REPORT_SIZE (1)
-	0x95, 0x01,                    //   REPORT_COUNT (1)
-	0x81, 0x02,                    //   INPUT (Data,Var,Abs)
-	0x75, 0x01,                    //   REPORT_SIZE (1)
-	0x95, 0x07,                    //   REPORT_COUNT (7)
-	0x81, 0x01,                    //   INPUT (Cnst,Ary,Abs)
-	0xc0                           // END_COLLECTION
+    0x05, 0x01,                    // USAGE_PAGE (Generic Desktop)
+    0x09, 0x06,                    // USAGE (Keyboard)
+    0xa1, 0x01,                    // COLLECTION (Application)
+    0x05, 0x07,                    //   USAGE_PAGE (Keyboard)
+    0x09, 0x04,                    //   USAGE (Keyboard a and A)
+    0x15, 0x00,                    //   LOGICAL_MINIMUM (0)
+    0x25, 0x01,                    //   LOGICAL_MAXIMUM (1)
+    0x75, 0x01,                    //   REPORT_SIZE (1)
+    0x95, 0x01,                    //   REPORT_COUNT (1)
+    0x81, 0x02,                    //   INPUT (Data,Var,Abs)
+    0x75, 0x01,                    //   REPORT_SIZE (1)
+    0x95, 0x07,                    //   REPORT_COUNT (7)
+    0x81, 0x01,                    //   INPUT (Cnst,Ary,Abs)
+    0xc0                           // END_COLLECTION
 };
 
 NTSTATUS VirtualKeyboardCreateDevice(PWDFDEVICE_INIT DeviceInit) {
-	PAGED_CODE();
+    PAGED_CODE();
 
-	TraceEnterFunc();
+    TraceEnterFunc();
 
-	// ƒfƒoƒCƒXì¬
-	WDF_OBJECT_ATTRIBUTES deviceAttributes;
-	WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&deviceAttributes, VIRTUAL_KEYBOARD_DEVICE_CONTEXT);
-	deviceAttributes.EvtCleanupCallback = VirtualKeyboardDeviceEvtCleanupCallback;
+    // ãƒ‡ãƒã‚¤ã‚¹ä½œæˆ
+    WDF_OBJECT_ATTRIBUTES deviceAttributes;
+    WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&deviceAttributes, VIRTUAL_KEYBOARD_DEVICE_CONTEXT);
+    deviceAttributes.EvtCleanupCallback = VirtualKeyboardDeviceEvtCleanupCallback;
 
-	WDFDEVICE device;
-	NTSTATUS status = WdfDeviceCreate(&DeviceInit, &deviceAttributes, &device);
+    WDFDEVICE device;
+    NTSTATUS status = WdfDeviceCreate(&DeviceInit, &deviceAttributes, &device);
 
-	if (!NT_SUCCESS(status)) {
-		TraceErrorStatus("WdfDeviceCreate", status);
-		return status;
-	}
+    if (!NT_SUCCESS(status)) {
+        TraceErrorStatus("WdfDeviceCreate", status);
+        return status;
+    }
 
-	PVIRTUAL_KEYBOARD_DEVICE_CONTEXT deviceContext = VirtualKeyboardGetDeviceContext(device);
+    PVIRTUAL_KEYBOARD_DEVICE_CONTEXT deviceContext = VirtualKeyboardGetDeviceContext(device);
 
-	// ƒfƒoƒCƒXƒRƒ“ƒeƒLƒXƒg‚Ì’†g‚ð‘S•” null ‚É‚µ‚Ä‚¨‚­i•Ï‚È‚Æ‚±‚ë‚Å Cleanup ‘–‚Á‚½‚ç¢‚é‚Ì‚Åj
-	RtlZeroMemory(deviceContext, sizeof(VIRTUAL_KEYBOARD_DEVICE_CONTEXT));
+    // ãƒ‡ãƒã‚¤ã‚¹ã‚³ãƒ³ãƒ†ã‚­ã‚¹ãƒˆã®ä¸­èº«ã‚’å…¨éƒ¨ null ã«ã—ã¦ãŠãï¼ˆå¤‰ãªã¨ã“ã‚ã§ Cleanup èµ°ã£ãŸã‚‰å›°ã‚‹ã®ã§ï¼‰
+    RtlZeroMemory(deviceContext, sizeof(VIRTUAL_KEYBOARD_DEVICE_CONTEXT));
 
-	// ƒŠƒ‚[ƒg HID ì¬
-	VHF_CONFIG vhfConfig;
-	VHF_CONFIG_INIT(&vhfConfig, WdfDeviceWdmGetDeviceObject(device), sizeof(ReportDescriptor), ReportDescriptor);
-	vhfConfig.VhfClientContext = deviceContext; // EvtVhfCleanup ‚ÅŽg‚¤
-	vhfConfig.EvtVhfCleanup = VirtualKeyboardEvtVhfCleanup;
+    // ãƒªãƒ¢ãƒ¼ãƒˆ HID ä½œæˆ
+    VHF_CONFIG vhfConfig;
+    VHF_CONFIG_INIT(&vhfConfig, WdfDeviceWdmGetDeviceObject(device), sizeof(ReportDescriptor), ReportDescriptor);
+    vhfConfig.VhfClientContext = deviceContext; // EvtVhfCleanup ã§ä½¿ã†
+    vhfConfig.EvtVhfCleanup = VirtualKeyboardEvtVhfCleanup;
 
-	status = VhfCreate(&vhfConfig, &deviceContext->VhfHandle);
+    status = VhfCreate(&vhfConfig, &deviceContext->VhfHandle);
 
-	if (!NT_SUCCESS(status)) {
-		TraceErrorStatus("VhfCreate", status);
-		return status;
-	}
+    if (!NT_SUCCESS(status)) {
+        TraceErrorStatus("VhfCreate", status);
+        return status;
+    }
 
-	status = VhfStart(deviceContext->VhfHandle);
+    status = VhfStart(deviceContext->VhfHandle);
 
-	if (!NT_SUCCESS(status)) {
-		TraceErrorStatus("VhfStart", status);
-		VhfDelete(deviceContext->VhfHandle, FALSE);
-		return status;
-	}
+    if (!NT_SUCCESS(status)) {
+        TraceErrorStatus("VhfStart", status);
+        VhfDelete(deviceContext->VhfHandle, FALSE);
+        return status;
+    }
 
-	// ƒ^ƒCƒ}[ì¬
-	status = VirtualKeyboardDeviceCreateKeyDownTimer(device);
-	if (NT_SUCCESS(status)) {
-		status = VirtualKeyboardDeviceCreateKeyUpTimer(device);
-		if (NT_SUCCESS(status)) {
-			WdfTimerStart(deviceContext->KeyDownTimer, WDF_REL_TIMEOUT_IN_MS(KEY_DOWN_TIMER_DUE_TIME_MS));
-		}
-	}
+    // ã‚¿ã‚¤ãƒžãƒ¼ä½œæˆ
+    status = VirtualKeyboardDeviceCreateKeyDownTimer(device);
+    if (NT_SUCCESS(status)) {
+        status = VirtualKeyboardDeviceCreateKeyUpTimer(device);
+        if (NT_SUCCESS(status)) {
+            WdfTimerStart(deviceContext->KeyDownTimer, WDF_REL_TIMEOUT_IN_MS(KEY_DOWN_TIMER_DUE_TIME_MS));
+        }
+    }
 
-	return STATUS_SUCCESS;
+    return STATUS_SUCCESS;
 }
 
 VOID VirtualKeyboardDeviceEvtCleanupCallback(_In_ WDFOBJECT Object) {
-	PAGED_CODE();
+    PAGED_CODE();
 
-	TraceEnterFunc();
+    TraceEnterFunc();
 
-	// ƒfƒoƒCƒX‚ðíœ
-	PVIRTUAL_KEYBOARD_DEVICE_CONTEXT deviceContext = VirtualKeyboardGetDeviceContext(Object);
-	VHFHANDLE hVhf = deviceContext->VhfHandle;
-	if (hVhf != NULL) {
-		deviceContext->VhfHandle = NULL;
-		VhfDelete(hVhf, FALSE);
-	}
+    // ãƒ‡ãƒã‚¤ã‚¹ã‚’å‰Šé™¤
+    PVIRTUAL_KEYBOARD_DEVICE_CONTEXT deviceContext = VirtualKeyboardGetDeviceContext(Object);
+    VHFHANDLE hVhf = deviceContext->VhfHandle;
+    if (hVhf != NULL) {
+        deviceContext->VhfHandle = NULL;
+        VhfDelete(hVhf, FALSE);
+    }
 }
 
 VOID VirtualKeyboardEvtVhfCleanup(_In_ PVOID VhfClientContext) {
-	TraceEnterFunc();
+    TraceEnterFunc();
 
-	PVIRTUAL_KEYBOARD_DEVICE_CONTEXT deviceContext = (PVIRTUAL_KEYBOARD_DEVICE_CONTEXT)VhfClientContext;
-	deviceContext->VhfHandle = NULL;
+    PVIRTUAL_KEYBOARD_DEVICE_CONTEXT deviceContext = (PVIRTUAL_KEYBOARD_DEVICE_CONTEXT)VhfClientContext;
+    deviceContext->VhfHandle = NULL;
 }
 
 NTSTATUS VirtualKeyboardDeviceCreateKeyDownTimer(WDFDEVICE device) {
-	PAGED_CODE();
+    PAGED_CODE();
 
-	WDF_TIMER_CONFIG timerConfig;
-	WDF_TIMER_CONFIG_INIT_PERIODIC(&timerConfig, VirtualKeyboardDeviceKeyDownTimerEvtTimerFunc, KEY_DOWN_TIMER_INTERVAL_MS);
+    WDF_TIMER_CONFIG timerConfig;
+    WDF_TIMER_CONFIG_INIT_PERIODIC(&timerConfig, VirtualKeyboardDeviceKeyDownTimerEvtTimerFunc, KEY_DOWN_TIMER_INTERVAL_MS);
 
-	WDF_OBJECT_ATTRIBUTES timerAttributes;
-	WDF_OBJECT_ATTRIBUTES_INIT(&timerAttributes);
-	timerAttributes.ParentObject = device;
+    WDF_OBJECT_ATTRIBUTES timerAttributes;
+    WDF_OBJECT_ATTRIBUTES_INIT(&timerAttributes);
+    timerAttributes.ParentObject = device;
 
-	WDFTIMER timer;
-	NTSTATUS status = WdfTimerCreate(&timerConfig, &timerAttributes, &timer);
+    WDFTIMER timer;
+    NTSTATUS status = WdfTimerCreate(&timerConfig, &timerAttributes, &timer);
 
-	if (!NT_SUCCESS(status)) {
-		TraceErrorStatus("WdfTimerCreate", status);
-		return status;
-	}
+    if (!NT_SUCCESS(status)) {
+        TraceErrorStatus("WdfTimerCreate", status);
+        return status;
+    }
 
-	PVIRTUAL_KEYBOARD_DEVICE_CONTEXT deviceContext = VirtualKeyboardGetDeviceContext(device);
-	deviceContext->KeyDownTimer = timer;
+    PVIRTUAL_KEYBOARD_DEVICE_CONTEXT deviceContext = VirtualKeyboardGetDeviceContext(device);
+    deviceContext->KeyDownTimer = timer;
 
-	return STATUS_SUCCESS;
+    return STATUS_SUCCESS;
 }
 
 VOID VirtualKeyboardDeviceKeyDownTimerEvtTimerFunc(_In_	WDFTIMER Timer) {
-	TraceEnterFunc();
+    TraceEnterFunc();
 
-	PVIRTUAL_KEYBOARD_DEVICE_CONTEXT deviceContext = VirtualKeyboardGetDeviceContext(WdfTimerGetParentObject(Timer));
-	VHFHANDLE hVhf = deviceContext->VhfHandle;
+    PVIRTUAL_KEYBOARD_DEVICE_CONTEXT deviceContext = VirtualKeyboardGetDeviceContext(WdfTimerGetParentObject(Timer));
+    VHFHANDLE hVhf = deviceContext->VhfHandle;
 
-	if (hVhf == NULL) return;
+    if (hVhf == NULL) return;
 
-	// LSB ‚ª A ‚ÌƒIƒ“ƒIƒt‚ð•\‚·‚Ì‚ÅAu1v‚É‚·‚é
-	UCHAR data = 1;
-	HID_XFER_PACKET packet;
-	packet.reportBuffer = &data;
-	packet.reportBufferLen = 1;
-	packet.reportId = 0;
+    // LSB ãŒ A ã®ã‚ªãƒ³ã‚ªãƒ•ã‚’è¡¨ã™ã®ã§ã€ã€Œ1ã€ã«ã™ã‚‹
+    UCHAR data = 1;
+    HID_XFER_PACKET packet;
+    packet.reportBuffer = &data;
+    packet.reportBufferLen = 1;
+    packet.reportId = 0;
 
-	NTSTATUS status = VhfReadReportSubmit(hVhf, &packet);
+    NTSTATUS status = VhfReadReportSubmit(hVhf, &packet);
 
-	if (NT_SUCCESS(status)) {
-		// ŽžŠÔ‚ªŒo‚Á‚½‚çƒtƒ‰ƒO‚ð‰º‚·
-		WdfTimerStart(deviceContext->KeyUpTimer, WDF_REL_TIMEOUT_IN_MS(KEY_UP_TIMER_DUE_TIME_MS));
-	}
-	else {
-		TraceErrorStatus("VhfReadReportSubmit", status);
-	}
+    if (NT_SUCCESS(status)) {
+        // æ™‚é–“ãŒçµŒã£ãŸã‚‰ãƒ•ãƒ©ã‚°ã‚’ä¸‹ã™
+        WdfTimerStart(deviceContext->KeyUpTimer, WDF_REL_TIMEOUT_IN_MS(KEY_UP_TIMER_DUE_TIME_MS));
+    }
+    else {
+        TraceErrorStatus("VhfReadReportSubmit", status);
+    }
 }
 
 NTSTATUS VirtualKeyboardDeviceCreateKeyUpTimer(WDFDEVICE device) {
-	PAGED_CODE();
+    PAGED_CODE();
 
-	WDF_TIMER_CONFIG timerConfig;
-	WDF_TIMER_CONFIG_INIT(&timerConfig, VirtualKeyboardDeviceKeyUpTimerEvtTimerFunc);
+    WDF_TIMER_CONFIG timerConfig;
+    WDF_TIMER_CONFIG_INIT(&timerConfig, VirtualKeyboardDeviceKeyUpTimerEvtTimerFunc);
 
-	WDF_OBJECT_ATTRIBUTES timerAttributes;
-	WDF_OBJECT_ATTRIBUTES_INIT(&timerAttributes);
-	timerAttributes.ParentObject = device;
-	timerAttributes.ExecutionLevel = WdfExecutionLevelPassive; // EvtTimerFunc ‚ð Passive ‚ÅŽÀs
+    WDF_OBJECT_ATTRIBUTES timerAttributes;
+    WDF_OBJECT_ATTRIBUTES_INIT(&timerAttributes);
+    timerAttributes.ParentObject = device;
+    timerAttributes.ExecutionLevel = WdfExecutionLevelPassive; // EvtTimerFunc ã‚’ Passive ã§å®Ÿè¡Œ
 
-	WDFTIMER timer;
-	NTSTATUS status = WdfTimerCreate(&timerConfig, &timerAttributes, &timer);
+    WDFTIMER timer;
+    NTSTATUS status = WdfTimerCreate(&timerConfig, &timerAttributes, &timer);
 
-	if (!NT_SUCCESS(status)) {
-		TraceErrorStatus("WdfTimerCreate", status);
-		return status;
-	}
+    if (!NT_SUCCESS(status)) {
+        TraceErrorStatus("WdfTimerCreate", status);
+        return status;
+    }
 
-	PVIRTUAL_KEYBOARD_DEVICE_CONTEXT deviceContext = VirtualKeyboardGetDeviceContext(device);
-	deviceContext->KeyUpTimer = timer;
+    PVIRTUAL_KEYBOARD_DEVICE_CONTEXT deviceContext = VirtualKeyboardGetDeviceContext(device);
+    deviceContext->KeyUpTimer = timer;
 
-	return STATUS_SUCCESS;
+    return STATUS_SUCCESS;
 }
 
 VOID VirtualKeyboardDeviceKeyUpTimerEvtTimerFunc(_In_ WDFTIMER Timer) {
-	PAGED_CODE();
+    PAGED_CODE();
 
-	TraceEnterFunc();
+    TraceEnterFunc();
 
-	PVIRTUAL_KEYBOARD_DEVICE_CONTEXT deviceContext = VirtualKeyboardGetDeviceContext(WdfTimerGetParentObject(Timer));
-	VHFHANDLE hVhf = deviceContext->VhfHandle;
+    PVIRTUAL_KEYBOARD_DEVICE_CONTEXT deviceContext = VirtualKeyboardGetDeviceContext(WdfTimerGetParentObject(Timer));
+    VHFHANDLE hVhf = deviceContext->VhfHandle;
 
-	if (hVhf == NULL) return;
+    if (hVhf == NULL) return;
 
-	UCHAR data = 0;
-	HID_XFER_PACKET packet;
-	packet.reportBuffer = &data;
-	packet.reportBufferLen = 1;
-	packet.reportId = 0;
+    UCHAR data = 0;
+    HID_XFER_PACKET packet;
+    packet.reportBuffer = &data;
+    packet.reportBufferLen = 1;
+    packet.reportId = 0;
 
-	NTSTATUS status = VhfReadReportSubmit(hVhf, &packet);
+    NTSTATUS status = VhfReadReportSubmit(hVhf, &packet);
 
-	if (!NTSTATUS(status)) {
-		TraceErrorStatus("VhfReadReportSubmit", status);
-	}
+    if (!NTSTATUS(status)) {
+        TraceErrorStatus("VhfReadReportSubmit", status);
+    }
 
-	if (++deviceContext->Counter >= LOOP_COUNT) {
-		// ‚±‚ê‚ÅI‚í‚è
-		VhfDelete(hVhf, FALSE);
-		WdfTimerStop(deviceContext->KeyDownTimer, FALSE);
-	}
+    if (++deviceContext->Counter >= LOOP_COUNT) {
+        // ã“ã‚Œã§çµ‚ã‚ã‚Š
+        VhfDelete(hVhf, FALSE);
+        WdfTimerStop(deviceContext->KeyDownTimer, FALSE);
+    }
 }
