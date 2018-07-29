@@ -229,7 +229,7 @@ VOID VirtualKeyboardDeviceKeyUpTimerEvtTimerFunc(_In_ WDFTIMER Timer) {
 
     NTSTATUS status = VhfReadReportSubmit(hVhf, &packet);
 
-    if (!NTSTATUS(status)) {
+    if (!NT_SUCCESS(status)) {
         TraceErrorStatus("VhfReadReportSubmit", status);
     }
 
